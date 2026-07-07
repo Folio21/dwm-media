@@ -1,0 +1,185 @@
+import { useState, useCallback, useEffect, useRef } from 'react';
+import SearchForm from './components/SearchForm.jsx';
+import LeadsTable from './components/LeadsTable.jsx';
+import DemoPreviewModal from './components/DemoPreviewModal.jsx';
+import RebuildSection from './components/RebuildSection.jsx';
+import SocialToSiteSection from './components/SocialToSiteSection.jsx';
+import ChatbotModal from './components/ChatbotModal.jsx';
+import AppointmentsPanel from './components/AppointmentsPanel.jsx';
+import LoginPage from './components/LoginPage.jsx';
+import { searchLeads, getLeads, updateLeadStatus, buildDemoSite, buildChatbotPitch } from './api.js';
+
+export default function App() {
+  const [token,    setToken]    = useState(() => localStorage.getItem('dwm_token'));
+  const [username, setUsername] = useState(() => localStorage.getItem('dwm_username') || '');
+
+  function handleLogin(tok, user) { setToken(tok); setUsername(user); }
+  function handleLogout() {
+    localStorage.removeItem('dwm_token');
+    localStorage.removeItem('dwm_username');
+    setToken(null); setUsername('');
+  }
+
+  if (!token) return <LoginPage onLogin={handleLogin} />;
+
+  const [leads, setLeads] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [lastQuery, setLastQuery] = useState(null); // { category, city }
+  const [filter, setFilter] = useState('pitch_ready');
+  const [sort, setSort] = useState('default');
+
+  // Refs so background-poll timers always use the *current* filter/sort,
+  // not the stale value captured at search time.
+  const filterRef = useRef(filter);
+  const sortRef = useRef(sort);
+  useEffect(() => { filterRef.current = filter; }, [filter]);
+  useEffect(() => { sortRef.current = sort; }, [sort]);
+  const [buildingDemoId, setBuildingDemoId] = useState(null);
+  const [buildingChatbotPitchId, setBuildingChatbotPitchId] = useState(null);
+  const [activeDemo, setActiveDemo] = useState(null); // { leadName, html, preview_url }
+  const [chatLead, setChatLead] = useState(null);     // lead object for chatbot demo
+
+  const refresh = useCallback(
+    async (query, currentFilter, currentSort) => {
+      if (!query) return;
+      try {
+        const { leads } = await getLeads({
+          category: query.category,
+          city: query.city,
+          filter: currentFilter === 'all' ? undefined : currentFilter,
+          sort: currentSort === 'default' ? undefined : currentSort,
+        });
+        setLeads(leads);
+      } catch (err) {
+        setError(err.message);
+      }
+    },
+    []
+  );
+
+  async function handleSearch(category, city) {
+    setLoading(true);
+    setError(null);
+    try {
+      await searchLeads(category, city);
+      const query = { category, city };
+      setLastQuery(query);
+      await refresh(query, filter, sort);
+
+      // Background owner lookups (website + Yelp + search) run on the server.
+      // Poll several times so names fill in as they resolve.
+      // Use refs so we always refresh with whatever filter/sort is active *when the timer fires*.
+      setTimeout(() => refresh(query, filterRef.current, sortRef.current), 6000);
+      setTimeout(() => refresh(query, filterRef.current, sortRef.current), 18000);
+      setTimeout(() => refresh(query, filterRef.current, sortRef.current), 35000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleUpdateLead(id, patch) {
+    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+    try {
+      await updateLeadStatus(id, patch);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function handleBuildChatbotPitch(lead) {
+    setBuildingChatbotPitchId(lead.id);
+    setError(null);
+    try {
+      const { html, preview_url } = await buildChatbotPitch(lead.id);
+      setActiveDemo({ leadName: lead.name + ' — Chatbot Pitch', html, preview_url });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBuildingChatbotPitchId(null);
+    }
+  }
+
+  async function handleBuildDemo(lead) {
+    setBuildingDemoId(lead.id);
+    setError(null);
+    try {
+      const { html, preview_url } = await buildDemoSite(lead.id);
+      setActiveDemo({ leadName: lead.name, html, preview_url });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBuildingDemoId(null);
+    }
+  }
+
+  useEffect(() => {
+    if (lastQuery) refresh(lastQuery, filter, sort);
+  }, [filter, sort]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <header className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Lead Finder</h1>
+          <p className="text-sm text-gray-500">Search local businesses, flag who needs a website, track calls.</p>
+        </div>
+        <div className="flex items-center gap-3 text-sm">
+          <span className="text-gray-500">Signed in as <strong>{username}</strong></span>
+          <button onClick={handleLogout} className="text-gray-400 hover:text-gray-700 underline text-xs">Sign out</button>
+        </div>
+      </header>
+
+      <SearchForm onSearch={handleSearch} loading={loading} />
+
+      {error && (
+        <div className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</div>
+      )}
+
+      {lastQuery && (
+        <div className="flex items-center gap-3 mt-4 text-sm">
+          <span className="text-gray-500">
+            Showing results for <strong>{lastQuery.category}</strong> in <strong>{lastQuery.city}</strong>
+          </span>
+
+          <select className="border rounded px-2 py-1 text-xs" value={filter} onChange={(e) => setFilter(e.target.value)}>
+            <option value="pitch_ready">Pitch targets (no website)</option>
+            <option value="chatbot_pitch">Chatbot targets (has website)</option>
+            <option value="not_called">Not called yet</option>
+            <option value="called">Called</option>
+            <option value="all">All results</option>
+          </select>
+
+          <select className="border rounded px-2 py-1 text-xs" value={sort} onChange={(e) => setSort(e.target.value)}>
+            <option value="default">Newest first</option>
+            <option value="rating">Rating</option>
+            <option value="reviews">Review count</option>
+          </select>
+        </div>
+      )}
+
+      <LeadsTable
+        leads={leads}
+        onUpdateLead={handleUpdateLead}
+        onBuildDemo={handleBuildDemo}
+        buildingDemoId={buildingDemoId}
+        onBuildChatbotPitch={handleBuildChatbotPitch}
+        buildingChatbotPitchId={buildingChatbotPitchId}
+        onDemoChat={(lead) => setChatLead(lead)}
+      />
+
+      <AppointmentsPanel />
+
+      <RebuildSection onPreview={(demo) => setActiveDemo(demo)} />
+      <SocialToSiteSection onPreview={(demo) => setActiveDemo(demo)} />
+
+      <DemoPreviewModal demo={activeDemo} onClose={() => setActiveDemo(null)} />
+
+      {chatLead && (
+        <ChatbotModal lead={chatLead} onClose={() => setChatLead(null)} />
+      )}
+    </div>
+  );
+}
