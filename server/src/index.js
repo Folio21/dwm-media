@@ -24,13 +24,15 @@ app.use(express.json());
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 app.use('/api', authRouter);          // login — no auth required
 
+// Public routes — called from demo sites shown to potential clients (no login token available)
+app.use('/api', chatRouter);
+app.use('/api', appointmentsRouter);
+
 app.use('/api', requireAuth);         // everything below requires a valid token
 app.use('/api', leadsRouter);
 app.use('/api', sitesRouter);
 app.use('/api', rebuildRouter);
 app.use('/api', socialRouter);
-app.use('/api', chatRouter);
-app.use('/api', appointmentsRouter);
 app.use('/api', chatbotPitchRouter);
 
 // Shareable demo-site link (Section 4: "Get shareable link" for Demo mode).
