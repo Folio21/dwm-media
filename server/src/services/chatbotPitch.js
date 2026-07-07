@@ -269,10 +269,10 @@ body{
     <div id="cp-messages"></div>
 
     <div id="cp-suggestions">
-      <button class="cp-sug" onclick="cpSend('What services do you offer?')">Services</button>
-      <button class="cp-sug" onclick="cpSend('What are your hours?')">Hours</button>
-      <button class="cp-sug" onclick="cpSend('How much does it cost?')">Pricing</button>
-      <button class="cp-sug" onclick="cpShowScheduler()">📅 Book Appointment</button>
+      <button class="cp-sug" onclick="cpSend('What services do you offer?', this)">Services</button>
+      <button class="cp-sug" onclick="cpSend('What are your hours?', this)">Hours</button>
+      <button class="cp-sug" onclick="cpSend('How much does it cost?', this)">Pricing</button>
+      <button class="cp-sug" onclick="cpShowScheduler(); this.remove()">📅 Book Appointment</button>
     </div>
 
     <!-- Inline scheduler -->
@@ -351,12 +351,12 @@ body{
     return el;
   }
 
-  window.cpSend = async function(forcedText){
+  window.cpSend = async function(forcedText, clickedBtn){
     var text = (forcedText || inputEl.value).trim();
     if(!text || sendBtn.disabled) return;
     if(!forcedText) inputEl.value = '';
     sendBtn.disabled = true;
-    sugEl.style.display = 'none';
+    if(clickedBtn) clickedBtn.remove(); else sugEl.style.display = 'none';
 
     addMsg('user', text);
     apiHistory.push({role:'user', content:text});
