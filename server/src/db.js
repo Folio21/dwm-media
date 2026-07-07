@@ -16,8 +16,8 @@ const dataFile = path.join(dataDir, 'leadfinder.json');
 
 function emptyStore() {
   return {
-    leads: [], clients: [], sites: [], appointments: [],
-    nextLeadId: 1, nextClientId: 1, nextSiteId: 1, nextAppointmentId: 1,
+    leads: [], clients: [], sites: [], appointments: [], meetings: [],
+    nextLeadId: 1, nextClientId: 1, nextSiteId: 1, nextAppointmentId: 1, nextMeetingId: 1,
   };
 }
 
@@ -188,4 +188,40 @@ export function updateAppointment(id, patch) {
   Object.assign(appt, patch, { updated_at: new Date().toISOString() });
   save(data);
   return appt;
+}
+
+// --- Sales Meetings (David + partner's Zoom/calls with business owners) -----
+
+export function addMeeting(meeting) {
+  const data = load();
+  if (!data.meetings) data.meetings = [];
+  if (!data.nextMeetingId) data.nextMeetingId = 1;
+  const now = new Date().toISOString();
+  const record = { id: data.nextMeetingId++, created_at: now, status: 'upcoming', ...meeting };
+  data.meetings.push(record);
+  save(data);
+  return record;
+}
+
+export function getAllMeetings() {
+  const data = load();
+  const meetings = data.meetings || [];
+  // Sort: upcoming first, then by date desc for past ones
+  return [...meetings].sort((a, b) => {
+    // Put upcoming at top
+    const order = { upcoming: 0, done: 1, 'no-show': 2, closed: 3 };
+    const aO = order[a.status] ?? 4;
+    const bO = order[b.status] ?? 4;
+    if (aO !== bO) return aO - bO;
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+}
+
+export function updateMeeting(id, patch) {
+  const data = load();
+  const meeting = (data.meetings || []).find((m) => m.id === Number(id));
+  if (!meeting) return null;
+  Object.assign(meeting, patch, { updated_at: new Date().toISOString() });
+  save(data);
+  return meeting;
 }

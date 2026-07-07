@@ -107,3 +107,23 @@ export function updateAppointmentStatus(id, status) {
     body: JSON.stringify({ status }),
   }).then(handle);
 }
+
+// --- Sales Meetings ----------------------------------------------------------
+
+export function getAllMeetings() {
+  return fetch(`${BASE}/meetings`, { headers: authHeaders() }).then(handle);
+}
+
+export function addMeeting(data) {
+  return fetch(`${BASE}/meetings`, {
+    method: 'POST', headers: authHeaders(),
+    body: JSON.stringify(data),
+  }).then(handle);
+}
+
+export function updateMeeting(id, patch) {
+  return fetch(`${BASE}/meetings/${id}`, {
+    method: 'PATCH', headers: authHeaders(),
+    body: JSON.stringify(patch),
+  }).then(handle);
+}

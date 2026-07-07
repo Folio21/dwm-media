@@ -10,6 +10,7 @@ import socialRouter from './routes/social.js';
 import chatRouter from './routes/chat.js';
 import appointmentsRouter from './routes/appointments.js';
 import chatbotPitchRouter from './routes/chatbotPitch.js';
+import meetingsRouter from './routes/meetings.js';
 import authRouter from './routes/auth.js';
 import { requireAuth } from './middleware/auth.js';
 import { getSiteById } from './db.js';
@@ -34,6 +35,7 @@ app.use('/api', sitesRouter);
 app.use('/api', rebuildRouter);
 app.use('/api', socialRouter);
 app.use('/api', chatbotPitchRouter);
+app.use('/api', meetingsRouter);
 
 // Shareable demo-site link (Section 4: "Get shareable link" for Demo mode).
 // Plain HTML, not JSON — meant to be opened directly in a browser or texted.
