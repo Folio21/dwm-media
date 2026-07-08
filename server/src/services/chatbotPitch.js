@@ -324,6 +324,7 @@ body{
 <script>
 (function(){
   var LEAD_ID = ${leadId};
+  var BIZ_CAT = '${category}'.toLowerCase();
   var SCHED_RE = /schedule|appointment|book|visit|available|come in|when can|open next|come out/i;
   var DAY_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   var MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -535,7 +536,22 @@ body{
     schedEl.appendChild(slotLabel);
 
     var nameInput=input('text','Your name *'); var phoneInput=input('tel','Phone number');
-    var notesTA=document.createElement('textarea'); notesTA.className='sched-field sched-textarea'; notesTA.placeholder='What do you need help with? (e.g. AC not cooling, inspection, new install…)';
+    var notesTA=document.createElement('textarea'); notesTA.className='sched-field sched-textarea'; notesTA.placeholder=(function(){
+      var c=BIZ_CAT;
+      if(/roof/.test(c))       return 'What do you need help with? (e.g. roof leak, storm damage, inspection, replacement…)';
+      if(/plumb/.test(c))      return 'What do you need help with? (e.g. leaking pipe, clogged drain, water heater, install…)';
+      if(/electr/.test(c))     return 'What do you need help with? (e.g. panel upgrade, outlet repair, wiring, inspection…)';
+      if(/hvac|heat|cool|air/.test(c)) return 'What do you need help with? (e.g. AC not cooling, heating issue, tune-up, new unit…)';
+      if(/lawn|landscape|tree|pest/.test(c)) return 'What do you need help with? (e.g. lawn care, tree trimming, pest control, quote…)';
+      if(/paint/.test(c))      return 'What do you need help with? (e.g. interior, exterior, color consult, free estimate…)';
+      if(/clean/.test(c))      return 'What do you need help planning? (e.g. deep clean, move-out, commercial, schedule…)';
+      if(/pool/.test(c))       return 'What do you need help with? (e.g. pool repair, weekly service, opening/closing, quote…)';
+      if(/garage|door/.test(c)) return 'What do you need help with? (e.g. door repair, opener, spring, new install…)';
+      if(/fence/.test(c))      return 'What do you need help with? (e.g. new fence, repair, gate, free estimate…)';
+      if(/dent|ortho/.test(c)) return 'What can we help you with? (e.g. cleaning, whitening, toothache, new patient…)';
+      if(/salon|barber|hair/.test(c)) return 'What service are you looking for? (e.g. haircut, color, highlights, appointment…)';
+      return 'What do you need help with? Tell us a bit about your situation…';
+    })();
     var errEl=el('div','sched-err');
     var btn=document.createElement('button'); btn.className='sched-confirm'; btn.textContent='Confirm Appointment';
 
