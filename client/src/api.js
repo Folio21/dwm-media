@@ -108,6 +108,14 @@ export function updateAppointmentStatus(id, status) {
   }).then(handle);
 }
 
+// --- Cold Email --------------------------------------------------------------
+
+export function buildColdEmail(id) {
+  return fetch(`${BASE}/leads/${id}/cold-email`, {
+    method: 'POST', headers: authHeaders(),
+  }).then(handle);
+}
+
 // --- Chatbot Activity --------------------------------------------------------
 
 export function getAllChatbotAppointments() {

@@ -6,9 +6,10 @@ import RebuildSection from './components/RebuildSection.jsx';
 import SocialToSiteSection from './components/SocialToSiteSection.jsx';
 import ChatbotModal from './components/ChatbotModal.jsx';
 import AppointmentsPanel from './components/AppointmentsPanel.jsx';
+import ColdEmailModal from './components/ColdEmailModal.jsx';
 import ChatbotActivityPanel from './components/ChatbotActivityPanel.jsx';
 import LoginPage from './components/LoginPage.jsx';
-import { searchLeads, getLeads, updateLeadStatus, buildDemoSite, buildChatbotPitch } from './api.js';
+import { searchLeads, getLeads, updateLeadStatus, buildDemoSite, buildChatbotPitch, buildColdEmail } from './api.js';
 
 // ── Main app (only rendered when logged in) ───────────────────────────────
 function MainApp({ username, onLogout }) {
@@ -28,6 +29,10 @@ function MainApp({ username, onLogout }) {
   const [buildingChatbotPitchId, setBuildingChatbotPitchId] = useState(null);
   const [activeDemo, setActiveDemo] = useState(null);
   const [chatLead, setChatLead] = useState(null);
+  const [coldEmailLead, setColdEmailLead] = useState(null);
+  const [coldEmail, setColdEmail] = useState(null);
+  const [coldEmailLoading, setColdEmailLoading] = useState(false);
+  const [coldEmailError, setColdEmailError] = useState(null);
 
   const refresh = useCallback(async (query, currentFilter, currentSort) => {
     if (!query) return;
@@ -101,6 +106,21 @@ function MainApp({ username, onLogout }) {
     if (lastQuery) refresh(lastQuery, filter, sort);
   }, [filter, sort]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  async function handleColdEmail(lead) {
+    setColdEmailLead(lead);
+    setColdEmail(null);
+    setColdEmailError(null);
+    setColdEmailLoading(true);
+    try {
+      const result = await buildColdEmail(lead.id);
+      setColdEmail(result);
+    } catch (err) {
+      setColdEmailError(err.message);
+    } finally {
+      setColdEmailLoading(false);
+    }
+  } // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <header className="mb-6 flex items-start justify-between">
@@ -148,6 +168,7 @@ function MainApp({ username, onLogout }) {
         onBuildChatbotPitch={handleBuildChatbotPitch}
         buildingChatbotPitchId={buildingChatbotPitchId}
         onDemoChat={(lead) => setChatLead(lead)}
+        onColdEmail={handleColdEmail}
       />
 
       <AppointmentsPanel />
@@ -158,6 +179,15 @@ function MainApp({ username, onLogout }) {
 
       {chatLead && (
         <ChatbotModal lead={chatLead} onClose={() => setChatLead(null)} />
+      )}
+      {coldEmailLead && (
+        <ColdEmailModal
+          lead={coldEmailLead}
+          email={coldEmail}
+          loading={coldEmailLoading}
+          error={coldEmailError}
+          onClose={() => { setColdEmailLead(null); setColdEmail(null); }}
+        />
       )}
     </div>
   );

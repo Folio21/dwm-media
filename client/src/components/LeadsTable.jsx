@@ -18,7 +18,7 @@ function PitchBadge({ hasWebsite }) {
   );
 }
 
-export default function LeadsTable({ leads, onUpdateLead, onBuildDemo, buildingDemoId, onBuildChatbotPitch, buildingChatbotPitchId, onDemoChat }) {
+export default function LeadsTable({ leads, onUpdateLead, onBuildDemo, buildingDemoId, onBuildChatbotPitch, buildingChatbotPitchId, onDemoChat, onColdEmail }) {
   const [editingNotes, setEditingNotes] = useState({});
   const [editingOwner, setEditingOwner] = useState({});
 
@@ -185,6 +185,14 @@ export default function LeadsTable({ leads, onUpdateLead, onBuildDemo, buildingD
                     className="text-xs px-2.5 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap"
                   >
                     💬 Demo Chat
+                  </button>
+                </td>
+                <td className="px-3 py-2">
+                  <button
+                    onClick={() => onColdEmail(lead)}
+                    className="text-xs px-2.5 py-1.5 rounded bg-teal-600 text-white hover:bg-teal-700 whitespace-nowrap"
+                  >
+                    ✉️ Cold Email
                   </button>
                 </td>
               </tr>
