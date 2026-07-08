@@ -18,10 +18,18 @@ export default function ColdEmailModal({ lead, email, loading, error, onClose })
     setFinding(true);
     setSendError('');
     try {
-      const { emails } = await findLeadEmail(lead.id);
-      setFoundEmails(emails);
-      if (emails.length > 0) setSelectedEmail(emails[0]);
-      else setSelectedEmail('');
+      const result = await findLeadEmail(lead.id);
+      // result = { found: string[], guessed: {email, guessed}[] }
+      const found   = result.found   || [];
+      const guessed = result.guessed || [];
+      const all = [
+        ...found.map((e) => ({ email: e, guessed: false })),
+        ...guessed,
+      ];
+      setFoundEmails(all);
+      if (found.length > 0)        setSelectedEmail(found[0]);
+      else if (guessed.length > 0) setSelectedEmail(guessed[0].email);
+      else                         setSelectedEmail('');
     } catch (e) {
       setSendError('Could not scrape site: ' + e.message);
       setFoundEmails([]);
@@ -114,27 +122,52 @@ export default function ColdEmailModal({ lead, email, loading, error, onClose })
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide block">Send To</label>
 
-                {/* Found email chips */}
+                {/* Found / guessed email chips */}
                 {foundEmails !== null && foundEmails.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {foundEmails.map((e) => (
-                      <button
-                        key={e}
-                        onClick={() => { setSelectedEmail(e); setCustomEmail(''); }}
-                        className={`px-3 py-1 rounded-full text-xs border transition-colors ${
-                          selectedEmail === e
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-gray-700 border-gray-200 hover:border-blue-400'
-                        }`}
-                      >
-                        {e}
-                      </button>
-                    ))}
+                  <div className="space-y-2">
+                    {/* Check if any are real finds vs all guessed */}
+                    {foundEmails.some((e) => !e.guessed) && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {foundEmails.filter((e) => !e.guessed).map(({ email: e }) => (
+                          <button
+                            key={e}
+                            onClick={() => { setSelectedEmail(e); setCustomEmail(''); }}
+                            className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                              selectedEmail === e
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-700 border-gray-200 hover:border-blue-400'
+                            }`}
+                          >
+                            {e}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {foundEmails.some((e) => e.guessed) && (
+                      <div>
+                        <p className="text-xs text-amber-600 mb-1">⚠️ No email found — these are common patterns for their domain (unverified):</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {foundEmails.filter((e) => e.guessed).map(({ email: e }) => (
+                            <button
+                              key={e}
+                              onClick={() => { setSelectedEmail(e); setCustomEmail(''); }}
+                              className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                                selectedEmail === e
+                                  ? 'bg-amber-500 text-white border-amber-500'
+                                  : 'bg-amber-50 text-amber-700 border-amber-200 hover:border-amber-400'
+                              }`}
+                            >
+                              {e}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {foundEmails !== null && foundEmails.length === 0 && (
-                  <p className="text-xs text-gray-400">No emails found on their site — enter one below.</p>
+                  <p className="text-xs text-gray-400">Nothing found — enter an email below or try calling first.</p>
                 )}
 
                 {/* Manual input */}

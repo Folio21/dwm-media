@@ -82,12 +82,12 @@ router.get('/leads/:id/find-email', async (req, res) => {
   if (!lead) return res.status(404).json({ error: 'Lead not found' });
 
   if (!lead.website) {
-    return res.json({ emails: [], message: 'No website on file for this lead' });
+    return res.json({ found: [], guessed: [], message: 'No website on file for this lead' });
   }
 
   try {
-    const emails = await scrapeEmailsFromSite(lead.website);
-    res.json({ emails });
+    const result = await scrapeEmailsFromSite(lead.website);
+    res.json(result); // { found: [], guessed: [] }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
