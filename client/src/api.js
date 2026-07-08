@@ -116,6 +116,19 @@ export function buildColdEmail(id) {
   }).then(handle);
 }
 
+export function findLeadEmail(id) {
+  return fetch(`${BASE}/leads/${id}/find-email`, {
+    headers: authHeaders(),
+  }).then(handle);
+}
+
+export function sendColdEmail(id, { to, subject, body }) {
+  return fetch(`${BASE}/leads/${id}/send-cold-email`, {
+    method: 'POST', headers: authHeaders(),
+    body: JSON.stringify({ to, subject, body }),
+  }).then(handle);
+}
+
 // --- Chatbot Activity --------------------------------------------------------
 
 export function getAllChatbotAppointments() {
