@@ -383,7 +383,7 @@ body{
         body: JSON.stringify({lead_id:LEAD_ID, messages:apiHistory})
       });
       var data = await res.json(); typing.remove();
-      var reply = data.content || 'Sorry, something went wrong.';
+      var reply = (data.content || 'Sorry, something went wrong.').replace(/\*\*(.*?)\*\*/g,'$1').replace(/\*(.*?)\*/g,'$1');
       addMsg('bot', reply);
       apiHistory.push({role:'assistant', content:reply});
     } catch(e){
