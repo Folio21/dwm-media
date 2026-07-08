@@ -81,7 +81,7 @@ router.post('/chat-contacts', (req, res) => {
   res.json({ contact });
 });
 
-// GET /api/chat-contacts — all first contacts (dashboard, requires auth — handled by middleware in index.js)
+// GET /api/chat-contacts — all first contacts (dashboard)
 router.get('/chat-contacts', (req, res) => {
   res.json({ contacts: getAllChatContacts() });
 });

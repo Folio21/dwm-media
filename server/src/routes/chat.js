@@ -117,7 +117,7 @@ router.post('/chat', async (req, res) => {
     const content = (data.content || []).map((b) => b.text || '').join('').trim();
 
     res.json({ role: 'assistant', content });
-  } catch (err) {
+   } catch (err) {
     console.error('[chat]', err.message);
     res.status(500).json({ error: err.message });
   }
