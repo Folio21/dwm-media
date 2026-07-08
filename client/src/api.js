@@ -129,6 +129,13 @@ export function sendColdEmail(id, { to, subject, body }) {
   }).then(handle);
 }
 
+export function sendLeadText(id, { to, body }) {
+  return fetch(`${BASE}/leads/${id}/send-text`, {
+    method: 'POST', headers: authHeaders(),
+    body: JSON.stringify({ to, body }),
+  }).then(handle);
+}
+
 // --- Chatbot Activity --------------------------------------------------------
 
 export function getAllChatbotAppointments() {

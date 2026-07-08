@@ -1,16 +1,56 @@
-import { useState, useRef } from 'react';
-import { findLeadEmail, sendColdEmail } from '../api.js';
+import { useState, useRef, useEffect } from 'react';
+import { findLeadEmail, sendColdEmail, sendLeadText } from '../api.js';
+
+// Generate a short SMS follow-up text from lead data
+function buildTextMessage(lead) {
+  const biz  = lead.name || 'your business';
+  const cat  = lead.category || 'local business';
+  const what = lead.has_website
+    ? 'an AI that books jobs and captures leads 24/7 right on your site'
+    : 'a professional site + AI chatbot that books jobs and captures leads 24/7';
+  return `Hey, this is David from DWM Media — tried calling ${biz} but missed you. I help ${cat} owners get more booked jobs with ${what}. Worth a 5-min call? — David`;
+}
+
+// Generate likely email addresses from a website URL (runs in browser, no server needed)
+function guessFromWebsite(website) {
+  if (!website) return [];
+  try {
+    let url = website.trim();
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    return ['info', 'contact', 'hello', 'office'].map((p) => `${p}@${host}`);
+  } catch {
+    return [];
+  }
+}
 
 export default function ColdEmailModal({ lead, email, loading, error, onClose }) {
-  const [copied, setCopied]         = useState(false);
-  const [finding, setFinding]       = useState(false);
-  const [foundEmails, setFoundEmails] = useState(null); // null = not searched yet
+  const [copied, setCopied]           = useState(false);
+  const [finding, setFinding]         = useState(false);
+  const [foundReal, setFoundReal]     = useState([]);    // confirmed from scrape
   const [selectedEmail, setSelectedEmail] = useState('');
-  const [customEmail, setCustomEmail]     = useState('');
-  const [sending, setSending]       = useState(false);
-  const [sent, setSent]             = useState(false);
-  const [sendError, setSendError]   = useState('');
+  const [customEmail, setCustomEmail] = useState('');
+  const [sending, setSending]         = useState(false);
+  const [sent, setSent]               = useState(false);
+  const [sendError, setSendError]     = useState('');
+  const [textCopied, setTextCopied]   = useState(false);
+  const [textSending, setTextSending] = useState(false);
+  const [textSent, setTextSent]       = useState(false);
+  const [textError, setTextError]     = useState('');
   const bodyRef = useRef(null);
+  const textRef = useRef(null);
+
+  const textMessage = buildTextMessage(lead);
+
+  // Domain-pattern suggestions — generated immediately from lead.website
+  const suggestions = guessFromWebsite(lead.website);
+
+  // Auto-select first suggestion on open
+  useEffect(() => {
+    if (suggestions.length > 0 && !selectedEmail) {
+      setSelectedEmail(suggestions[0]);
+    }
+  }, []);
 
   const toAddress = selectedEmail || customEmail;
 
@@ -19,28 +59,18 @@ export default function ColdEmailModal({ lead, email, loading, error, onClose })
     setSendError('');
     try {
       const result = await findLeadEmail(lead.id);
-      // result = { found: string[], guessed: {email, guessed}[] }
-      const found   = result.found   || [];
-      const guessed = result.guessed || [];
-      const all = [
-        ...found.map((e) => ({ email: e, guessed: false })),
-        ...guessed,
-      ];
-      setFoundEmails(all);
-      if (found.length > 0)        setSelectedEmail(found[0]);
-      else if (guessed.length > 0) setSelectedEmail(guessed[0].email);
-      else                         setSelectedEmail('');
+      const found = result.found || [];
+      setFoundReal(found);
+      if (found.length > 0) setSelectedEmail(found[0]);
     } catch (e) {
-      setSendError('Could not scrape site: ' + e.message);
-      setFoundEmails([]);
+      setSendError('Scrape failed: ' + e.message);
     } finally {
       setFinding(false);
     }
   }
 
   async function handleSend() {
-    if (!toAddress) { setSendError('Enter or find an email address first.'); return; }
-    if (!email?.subject || !email?.body) return;
+    if (!toAddress) { setSendError('Select or enter an email address.'); return; }
     const body = bodyRef.current ? bodyRef.current.value : email.body;
     setSending(true);
     setSendError('');
@@ -56,11 +86,37 @@ export default function ColdEmailModal({ lead, email, loading, error, onClose })
 
   function copyAll() {
     const body = bodyRef.current ? bodyRef.current.value : email.body;
-    const text = `Subject: ${email.subject}\n\n${body}`;
-    navigator.clipboard.writeText(text).then(() => {
+    navigator.clipboard.writeText(`Subject: ${email.subject}\n\n${body}`).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  }
+
+  function copyText() {
+    const msg = textRef.current ? textRef.current.value : textMessage;
+    navigator.clipboard.writeText(msg).then(() => {
+      setTextCopied(true);
+      setTimeout(() => setTextCopied(false), 2000);
+    });
+  }
+
+  async function handleSendText() {
+    const msg = textRef.current ? textRef.current.value : textMessage;
+    setTextSending(true);
+    setTextError('');
+    try {
+      await sendLeadText(lead.id, { body: msg });
+      setTextSent(true);
+    } catch (e) {
+      setTextError(e.message);
+    } finally {
+      setTextSending(false);
+    }
+  }
+
+  function selectChip(e) {
+    setSelectedEmail(e);
+    setCustomEmail('');
   }
 
   return (
@@ -79,7 +135,6 @@ export default function ColdEmailModal({ lead, email, loading, error, onClose })
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
 
-          {/* Generating spinner */}
           {loading && (
             <div className="flex items-center gap-2 text-sm text-gray-500 py-8 justify-center">
               <svg className="animate-spin h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24">
@@ -115,77 +170,105 @@ export default function ColdEmailModal({ lead, email, loading, error, onClose })
                 />
               </div>
 
-              {/* Divider */}
               <hr className="border-gray-100"/>
 
-              {/* Email destination section */}
+              {/* Text Message Section */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">📱 Follow-Up Text</label>
+                  <span className="text-xs text-gray-400">{lead.phone || 'No phone on file'}</span>
+                </div>
+                <textarea
+                  ref={textRef}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={4}
+                  defaultValue={textMessage}
+                />
+                <div className="flex gap-2 mt-2 items-center">
+                  <button onClick={copyText}
+                    className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
+                    {textCopied ? '✓ Copied' : 'Copy Text'}
+                  </button>
+                  <button onClick={handleSendText}
+                    disabled={textSending || textSent || !lead.phone}
+                    title={!lead.phone ? 'No phone number on file for this lead' : ''}
+                    className="px-3 py-1.5 text-xs rounded-lg bg-green-600 text-white hover:bg-green-700 font-medium disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1">
+                    {textSending
+                      ? <><svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>Sending…</>
+                      : textSent ? '✓ Text Sent!' : '📲 Send Text'}
+                  </button>
+                  {textError && <p className="text-xs text-red-600 flex-1">{textError}</p>}
+                  {textSent  && <p className="text-xs text-green-600">Sent to {lead.phone}</p>}
+                </div>
+              </div>
+
+              <hr className="border-gray-100"/>
+
+              {/* Send To */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide block">Send To</label>
 
-                {/* Found / guessed email chips */}
-                {foundEmails !== null && foundEmails.length > 0 && (
-                  <div className="space-y-2">
-                    {/* Check if any are real finds vs all guessed */}
-                    {foundEmails.some((e) => !e.guessed) && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {foundEmails.filter((e) => !e.guessed).map(({ email: e }) => (
-                          <button
-                            key={e}
-                            onClick={() => { setSelectedEmail(e); setCustomEmail(''); }}
-                            className={`px-3 py-1 rounded-full text-xs border transition-colors ${
-                              selectedEmail === e
-                                ? 'bg-blue-600 text-white border-blue-600'
-                                : 'bg-white text-gray-700 border-gray-200 hover:border-blue-400'
-                            }`}
-                          >
-                            {e}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {foundEmails.some((e) => e.guessed) && (
-                      <div>
-                        <p className="text-xs text-amber-600 mb-1">⚠️ No email found — these are common patterns for their domain (unverified):</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {foundEmails.filter((e) => e.guessed).map(({ email: e }) => (
-                            <button
-                              key={e}
-                              onClick={() => { setSelectedEmail(e); setCustomEmail(''); }}
-                              className={`px-3 py-1 rounded-full text-xs border transition-colors ${
-                                selectedEmail === e
-                                  ? 'bg-amber-500 text-white border-amber-500'
-                                  : 'bg-amber-50 text-amber-700 border-amber-200 hover:border-amber-400'
-                              }`}
-                            >
-                              {e}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                {/* Confirmed real emails (from scrape) */}
+                {foundReal.length > 0 && (
+                  <div>
+                    <p className="text-xs text-green-600 font-medium mb-1.5">✓ Found on their website:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {foundReal.map((e) => (
+                        <button key={e} onClick={() => selectChip(e)}
+                          className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                            selectedEmail === e
+                              ? 'bg-green-600 text-white border-green-600'
+                              : 'bg-green-50 text-green-700 border-green-200 hover:border-green-500'
+                          }`}>
+                          {e}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
 
-                {foundEmails !== null && foundEmails.length === 0 && (
-                  <p className="text-xs text-gray-400">Nothing found — enter an email below or try calling first.</p>
+                {/* Domain-pattern suggestions — always visible */}
+                {suggestions.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1.5">
+                      {foundReal.length > 0 ? 'Or try a common pattern:' : 'Common patterns for their domain — pick one to try:'}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {suggestions.map((e) => (
+                        <button key={e} onClick={() => selectChip(e)}
+                          className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                            selectedEmail === e && foundReal.length === 0
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : selectedEmail === e
+                              ? 'bg-blue-100 text-blue-700 border-blue-300'
+                              : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'
+                          }`}>
+                          {e}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
-                {/* Manual input */}
+                {!lead.website && (
+                  <p className="text-xs text-gray-400">No website on file — enter an email below.</p>
+                )}
+
+                {/* Manual override */}
                 <input
                   type="email"
-                  placeholder={selectedEmail || 'Enter email manually…'}
+                  placeholder="Or type email manually…"
                   value={customEmail}
                   onChange={(e) => { setCustomEmail(e.target.value); setSelectedEmail(''); }}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
 
-                {sendError && (
-                  <p className="text-xs text-red-600">{sendError}</p>
+                {toAddress && !sent && (
+                  <p className="text-xs text-gray-500">Sending to: <span className="font-medium text-gray-700">{toAddress}</span></p>
                 )}
 
-                {sent && (
-                  <p className="text-xs text-green-600 font-medium">✓ Email sent to {toAddress}</p>
-                )}
+                {sendError && <p className="text-xs text-red-600">{sendError}</p>}
+                {sent && <p className="text-xs text-green-600 font-medium">✓ Sent to {toAddress}</p>}
               </div>
             </>
           )}
@@ -194,55 +277,31 @@ export default function ColdEmailModal({ lead, email, loading, error, onClose })
         {/* Footer */}
         {!loading && !error && email && (
           <div className="px-5 py-3 border-t border-gray-100 flex gap-2 justify-between items-center">
-            {/* Left: find + copy */}
             <div className="flex gap-2">
-              <button
-                onClick={handleFindEmail}
-                disabled={finding || !lead.website}
-                title={!lead.website ? 'No website on file for this lead' : ''}
-                className="px-3 py-2 text-xs rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
-              >
-                {finding ? (
-                  <>
-                    <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                    </svg>
-                    Searching…
-                  </>
-                ) : '🔍 Find Email'}
-              </button>
-
-              <button
-                onClick={copyAll}
-                className="px-3 py-2 text-xs rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
-              >
+              {lead.website && (
+                <button onClick={handleFindEmail} disabled={finding}
+                  className="px-3 py-2 text-xs rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 flex items-center gap-1">
+                  {finding
+                    ? <><svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>Searching…</>
+                    : foundReal.length > 0 ? '✓ Email Found' : '🔍 Search Website'}
+                </button>
+              )}
+              <button onClick={copyAll}
+                className="px-3 py-2 text-xs rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
                 {copied ? '✓ Copied' : 'Copy'}
               </button>
             </div>
 
-            {/* Right: send + close */}
             <div className="flex gap-2">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 text-xs rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
-              >
+              <button onClick={onClose}
+                className="px-4 py-2 text-xs rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
                 Close
               </button>
-              <button
-                onClick={handleSend}
-                disabled={sending || sent || !toAddress}
-                className="px-4 py-2 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-medium disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
-              >
-                {sending ? (
-                  <>
-                    <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                    </svg>
-                    Sending…
-                  </>
-                ) : sent ? '✓ Sent!' : '📤 Send Email'}
+              <button onClick={handleSend} disabled={sending || sent || !toAddress}
+                className="px-4 py-2 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-medium disabled:opacity-40 flex items-center gap-1">
+                {sending
+                  ? <><svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>Sending…</>
+                  : sent ? '✓ Sent!' : '📤 Send Email'}
               </button>
             </div>
           </div>

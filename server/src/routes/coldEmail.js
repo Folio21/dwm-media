@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import fetch from 'node-fetch';
 import nodemailer from 'nodemailer';
+import twilio from 'twilio';
 import { getLeadById } from '../db.js';
 import { scrapeEmailsFromSite } from '../services/emailScraper.js';
 
@@ -116,6 +117,33 @@ router.post('/leads/:id/send-cold-email', async (req, res) => {
       text: body,
     });
     res.json({ sent: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/leads/:id/send-text — send SMS via Twilio
+router.post('/leads/:id/send-text', async (req, res) => {
+  const lead = getLeadById(req.params.id);
+  if (!lead) return res.status(404).json({ error: 'Lead not found' });
+
+  const { to, body } = req.body || {};
+  const phone = to || lead.phone;
+  if (!phone) return res.status(400).json({ error: 'No phone number available for this lead' });
+  if (!body)  return res.status(400).json({ error: 'body is required' });
+
+  const sid   = process.env.TWILIO_ACCOUNT_SID;
+  const token = process.env.TWILIO_AUTH_TOKEN;
+  const from  = process.env.TWILIO_PHONE_NUMBER;
+
+  if (!sid || !token || !from) {
+    return res.status(500).json({ error: 'Twilio env vars not set (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER)' });
+  }
+
+  try {
+    const client  = twilio(sid, token);
+    const message = await client.messages.create({ from, to: phone, body });
+    res.json({ sent: true, sid: message.sid });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
