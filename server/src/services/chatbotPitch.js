@@ -121,6 +121,9 @@ body{
   font-size:12px;cursor:pointer;transition:all .15s;font-family:inherit;
 }
 .cp-sug:hover{background:#2563eb;border-color:#2563eb;color:#fff;}
+#cp-book-btn{display:block;width:100%;padding:10px;margin:0 0 8px 0;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:0.01em;}
+#cp-book-btn:hover{background:#1d4ed8;}
+#cp-book-btn.hidden{display:none;}
 
 /* input row */
 #cp-input-row{
@@ -272,8 +275,8 @@ body{
       <button class="cp-sug" onclick="cpSend('What services do you offer?', this)">Services</button>
       <button class="cp-sug" onclick="cpSend('What are your hours?', this)">Hours</button>
       <button class="cp-sug" onclick="cpSend('How much does it cost?', this)">Pricing</button>
-      <button class="cp-sug" onclick="cpShowScheduler(); this.remove()">📅 Book Appointment</button>
     </div>
+    <button id="cp-book-btn" onclick="cpShowScheduler()">📅 Book Appointment</button>
 
     <!-- Inline scheduler -->
     <div id="cp-scheduler">
@@ -445,6 +448,7 @@ body{
 
   window.cpShowScheduler = function(){
     schedulerShown = true;
+    var bb=document.getElementById('cp-book-btn'); if(bb) bb.classList.add('hidden');
     schedState = {step:'date', date:null, time:null};
     schedEl.classList.add('visible');
     renderSched();
