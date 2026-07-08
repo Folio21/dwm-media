@@ -382,13 +382,15 @@ body{
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({lead_id:LEAD_ID, messages:apiHistory})
       });
-      var data = await res.json(); typing.remove();
+      var text = await res.text(); typing.remove();
+      var data; try{ data=JSON.parse(text); }catch(pe){ addMsg('bot','Server error: '+text.slice(0,120)); sendBtn.disabled=false; inputEl.focus(); return; }
+      if(!res.ok){ addMsg('bot','Error: '+(data.error||'unknown — status '+res.status)); sendBtn.disabled=false; inputEl.focus(); return; }
       var reply = (data.content || 'Sorry, something went wrong.').replace(/\*\*(.*?)\*\*/g,'$1').replace(/\*(.*?)\*/g,'$1');
       addMsg('bot', reply);
       apiHistory.push({role:'assistant', content:reply});
     } catch(e){
       typing.remove();
-      addMsg('bot', 'Oops, something went wrong. Please try again!');
+      addMsg('bot', 'Network error: '+e.message);
     }
     sendBtn.disabled = false; inputEl.focus();
     // callback card shown on open
