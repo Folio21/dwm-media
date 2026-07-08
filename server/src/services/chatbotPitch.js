@@ -385,7 +385,7 @@ body{
       var text = await res.text(); typing.remove();
       var data; try{ data=JSON.parse(text); }catch(pe){ addMsg('bot','Server error: '+text.slice(0,120)); sendBtn.disabled=false; inputEl.focus(); return; }
       if(!res.ok){ addMsg('bot','Error: '+(data.error||'unknown — status '+res.status)); sendBtn.disabled=false; inputEl.focus(); return; }
-      var reply = (data.content || 'Sorry, something went wrong.').replace(/\*\*(.*?)\*\*/g,'$1').replace(/\*(.*?)\*/g,'$1');
+      var reply = (data.content || 'Sorry, something went wrong.').split('**').join('').split('*').join('');
       addMsg('bot', reply);
       apiHistory.push({role:'assistant', content:reply});
     } catch(e){

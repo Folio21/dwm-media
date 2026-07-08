@@ -267,7 +267,7 @@ export function buildChatWidgetHtml(leadId, businessContext = {}) {
     try{
       var res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lead_id:LEAD_ID,biz_name:BIZ_NAME,biz_type:BIZ_TYPE,biz_phone:BIZ_PHONE,messages:apiHistory})});
       var data=await res.json(); typing.remove();
-      var reply=(data.content||'Sorry, I could not respond right now.').replace(/\*\*(.*?)\*\*/g,'$1').replace(/\*(.*?)\*/g,'$1');
+      var reply=(data.content||'Sorry, I could not respond right now.').split('**').join('').split('*').join('');
       addMsg('bot',reply);
       apiHistory.push({role:'assistant',content:reply});
     }catch(e){
