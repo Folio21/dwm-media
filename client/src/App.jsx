@@ -6,6 +6,7 @@ import RebuildSection from './components/RebuildSection.jsx';
 import SocialToSiteSection from './components/SocialToSiteSection.jsx';
 import ChatbotModal from './components/ChatbotModal.jsx';
 import AppointmentsPanel from './components/AppointmentsPanel.jsx';
+import ChatbotActivityPanel from './components/ChatbotActivityPanel.jsx';
 import LoginPage from './components/LoginPage.jsx';
 import { searchLeads, getLeads, updateLeadStatus, buildDemoSite, buildChatbotPitch } from './api.js';
 
@@ -150,6 +151,7 @@ function MainApp({ username, onLogout }) {
       />
 
       <AppointmentsPanel />
+      <ChatbotActivityPanel />
       <RebuildSection onPreview={(demo) => setActiveDemo(demo)} />
       <SocialToSiteSection onPreview={(demo) => setActiveDemo(demo)} />
       <DemoPreviewModal demo={activeDemo} onClose={() => setActiveDemo(null)} />

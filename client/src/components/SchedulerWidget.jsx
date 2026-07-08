@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { bookAppointment } from '../api.js';
+import { bookAppointment, addChatContact } from '../api.js';
 
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = [
@@ -63,6 +63,14 @@ export default function SchedulerWidget({ lead, onScheduled }) {
     setSaving(true);
     setError('');
     try {
+      // Log first contact before booking so partial abandons are also captured
+      addChatContact({
+        lead_id: lead?.id || null,
+        lead_name: lead?.name || 'Demo Site',
+        customer_name: form.name.trim(),
+        customer_phone: form.phone.trim(),
+      }).catch(() => {}); // fire-and-forget, don't block booking
+
       await bookAppointment(lead.id, {
         name: form.name.trim(),
         phone: form.phone.trim(),

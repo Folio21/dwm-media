@@ -5,6 +5,8 @@ import {
   getAppointmentsByLeadId,
   getAllAppointments,
   updateAppointment,
+  addChatContact,
+  getAllChatContacts,
 } from '../db.js';
 
 const router = express.Router();
@@ -69,6 +71,19 @@ router.patch('/appointments/:id', (req, res) => {
   const appt = updateAppointment(req.params.id, req.body);
   if (!appt) return res.status(404).json({ error: 'Appointment not found' });
   res.json({ appointment: appt });
+});
+
+// POST /api/chat-contacts — log a first contact from the chatbot widget (public)
+router.post('/chat-contacts', (req, res) => {
+  const { lead_id, lead_name, customer_name, customer_phone } = req.body || {};
+  if (!customer_name) return res.status(400).json({ error: 'customer_name required' });
+  const contact = addChatContact({ lead_id: lead_id || null, lead_name: lead_name || 'Demo Site', customer_name, customer_phone: customer_phone || '' });
+  res.json({ contact });
+});
+
+// GET /api/chat-contacts — all first contacts (dashboard, requires auth — handled by middleware in index.js)
+router.get('/chat-contacts', (req, res) => {
+  res.json({ contacts: getAllChatContacts() });
 });
 
 export default router;

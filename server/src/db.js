@@ -16,8 +16,8 @@ const dataFile = path.join(dataDir, 'leadfinder.json');
 
 function emptyStore() {
   return {
-    leads: [], clients: [], sites: [], appointments: [], meetings: [],
-    nextLeadId: 1, nextClientId: 1, nextSiteId: 1, nextAppointmentId: 1, nextMeetingId: 1,
+    leads: [], clients: [], sites: [], appointments: [], meetings: [], chat_contacts: [],
+    nextLeadId: 1, nextClientId: 1, nextSiteId: 1, nextAppointmentId: 1, nextMeetingId: 1, nextChatContactId: 1,
   };
 }
 
@@ -224,4 +224,32 @@ export function updateMeeting(id, patch) {
   Object.assign(meeting, patch, { updated_at: new Date().toISOString() });
   save(data);
   return meeting;
+}
+
+// --- Chat Contacts (first contacts via chatbot widget, even without a booking) ---
+
+export function addChatContact(contact) {
+  const data = load();
+  if (!data.chat_contacts) data.chat_contacts = [];
+  if (!data.nextChatContactId) data.nextChatContactId = 1;
+  const now = new Date().toISOString();
+  // Avoid duplicates: same name+phone+lead_id within 24 hours
+  const recent = data.chat_contacts.find((c) =>
+    c.lead_id === contact.lead_id &&
+    c.customer_phone === contact.customer_phone &&
+    c.customer_name === contact.customer_name &&
+    (Date.now() - new Date(c.created_at).getTime()) < 86400000
+  );
+  if (recent) return recent;
+  const record = { id: data.nextChatContactId++, created_at: now, ...contact };
+  data.chat_contacts.push(record);
+  save(data);
+  return record;
+}
+
+export function getAllChatContacts() {
+  const data = load();
+  return [...(data.chat_contacts || [])].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  );
 }

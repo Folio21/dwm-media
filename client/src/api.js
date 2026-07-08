@@ -108,6 +108,24 @@ export function updateAppointmentStatus(id, status) {
   }).then(handle);
 }
 
+// --- Chatbot Activity --------------------------------------------------------
+
+export function getAllChatbotAppointments() {
+  return fetch(`${BASE}/appointments`, { headers: authHeaders() }).then(handle);
+}
+
+export function addChatContact(data) {
+  return fetch(`${BASE}/chat-contacts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  }).then(handle);
+}
+
+export function getAllChatContacts() {
+  return fetch(`${BASE}/chat-contacts`, { headers: authHeaders() }).then(handle);
+}
+
 // --- Sales Meetings ----------------------------------------------------------
 
 export function getAllMeetings() {
