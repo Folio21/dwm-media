@@ -216,7 +216,7 @@ export function buildChatWidgetHtml(leadId, businessContext = {}) {
   window.lcwToggle=function(){
     opened=!opened;
     panel.classList.toggle('open',opened);
-    if(opened&&msgsEl.children.length===0) addMsg('bot','Hi there! 👋 How can I help you today? Ask about our services, pricing, or book an appointment below.');
+    if(opened&&msgsEl.children.length===0){ addMsg('bot','Hi there! 👋 How can I help you today? Ask about our services, pricing, or book an appointment below.'); showCallbackCapture(); }
     if(opened) setTimeout(function(){inputEl.focus();},60);
   };
 
@@ -280,7 +280,7 @@ export function buildChatWidgetHtml(leadId, businessContext = {}) {
     }
     // Callback capture: only show late in convo when user signals they're wrapping up
     var isWrappingUp = /\b(thanks|thank you|okay|ok|got it|bye|goodbye|that.?s all|no thank|not (right )?now|i.?m (good|set)|sounds good|perfect)\b/i.test(text);
-    if(userMsgCount>=5 && isWrappingUp && !callbackShown && !schedulerShown){ showCallbackCapture(); }
+    // callback card shown on open
   };
 
   // ── Callback / Lead Capture ───────────────────────────────────────────────

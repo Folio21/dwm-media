@@ -340,6 +340,7 @@ body{
 
   // ── Boot greeting ────────────────────────────────────────────────────────
   addMsg('bot', ${JSON.stringify(greeting)});
+  showCallbackCapture();
 
   // ── Messaging ────────────────────────────────────────────────────────────
   function addMsg(role, text){
@@ -390,7 +391,7 @@ body{
       addMsg('bot', 'Oops, something went wrong. Please try again!');
     }
     sendBtn.disabled = false; inputEl.focus();
-    if(userMsgCount >= 2 && !callbackShown && !schedulerShown){ showCallbackCapture(); }
+    // callback card shown on open
   };
 
   // ── Callback / Lead Capture ───────────────────────────────────────────────
