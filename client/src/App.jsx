@@ -132,7 +132,10 @@ function MainApp({ username, onLogout }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); }
+      catch { alert('Server error (status ' + res.status + '):\n' + text.slice(0, 300)); return; }
       if (data.error) { alert('Error: ' + data.error); return; }
       setReceptionistLead({ ...lead, receptionist: data.receptionist });
     } catch (err) {
