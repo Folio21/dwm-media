@@ -90,7 +90,68 @@ function normalizePlace(place) {
     description: place.editorialSummary?.text || null,
     review_snippet: bestReview ? bestReview.text.text.slice(0, 300) : null,
     types: place.types || [],
+    owner_name: extractOwnerFromReviews(reviews),
   };
+}
+
+/**
+ * Scans Google review texts for mentions of the business owner.
+ * Customers frequently write things like "The owner John fixed our AC same day"
+ * or "Ask for Sarah — she's the owner and really knows her stuff."
+ * Returns the first plausible name found, or null.
+ */
+function extractOwnerFromReviews(reviews) {
+  const texts = reviews
+    .filter((r) => r.text?.text && r.text.text.length > 15)
+    .map((r) => r.text.text);
+
+  if (!texts.length) return null;
+
+  // Also check owner responses — owners often sign their name at the end
+  const responses = reviews
+    .filter((r) => r.ownerResponse?.text)
+    .map((r) => (typeof r.ownerResponse.text === 'string'
+      ? r.ownerResponse.text
+      : r.ownerResponse.text?.text || ''));
+
+  const allTexts = [...texts, ...responses];
+
+  // Patterns — ordered most-specific first to reduce false positives
+  const NAME = '([A-Z][a-záéíóúñ]{1,18}(?:\\s+[A-Z][a-záéíóúñ]{1,18})?)';
+  const patterns = [
+    // "the owner John Smith" / "owner John"
+    new RegExp(`(?:the\\s+)?owner[,\\s]+${NAME}`, 'i'),
+    // "John Smith, the owner" / "John (owner)"
+    new RegExp(`${NAME}[,\\s(]+(?:the\\s+)?owner`, 'i'),
+    // "John Smith, owner/founder/operator/proprietor"
+    new RegExp(`${NAME}[,\\s]+(?:owner|founder|operator|proprietor)`, 'i'),
+    // "founded by John Smith"
+    new RegExp(`founded\\s+by\\s+${NAME}`, 'i'),
+    // "spoke/dealt/worked with John (the owner)"
+    new RegExp(`(?:spoke|dealt|worked)\\s+with\\s+${NAME}[,\\s(]+(?:the\\s+)?owner`, 'i'),
+    // "John runs/owns this place"
+    new RegExp(`${NAME}\\s+(?:runs|owns|operates)\\s+(?:this|the)`, 'i'),
+    // Owner response signatures: "- John Smith" or "— John, Owner"
+    new RegExp(`[-–—]\\s*${NAME}[,\\s]*(?:owner|manager|founder)?\\s*$`, 'im'),
+    // "Sincerely/Best, John Smith" in owner responses
+    new RegExp(`(?:sincerely|best|regards|thanks)[,!]?\\s+${NAME}`, 'i'),
+  ];
+
+  for (const text of allTexts) {
+    for (const pattern of patterns) {
+      const m = text.match(pattern);
+      if (m?.[1]) {
+        const name = m[1].trim();
+        const words = name.split(/\s+/);
+        // Must be 1-3 words, each starting capital + lowercase
+        if (words.length >= 1 && words.length <= 3 &&
+            words.every((w) => /^[A-Z][a-záéíóúñ']{1,18}$/.test(w))) {
+          return name;
+        }
+      }
+    }
+  }
+  return null;
 }
 
 /**

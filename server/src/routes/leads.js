@@ -41,6 +41,8 @@ router.post('/search-leads', async (req, res) => {
         description: p.description,
         opening_hours: p.opening_hours,
         review_snippet: p.review_snippet,
+        // Owner name extracted from Google review text — don't overwrite existing
+        ...(p.owner_name ? { owner_name: p.owner_name } : {}),
       });
     }
 
