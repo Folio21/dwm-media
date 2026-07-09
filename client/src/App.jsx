@@ -36,6 +36,7 @@ function MainApp({ username, onLogout }) {
   const [coldEmailError, setColdEmailError] = useState(null);
   const [receptionistLead, setReceptionistLead] = useState(null);
   const [receptionistLoading, setReceptionistLoading] = useState(false);
+  const [receptionistRefresh, setReceptionistRefresh] = useState(0);
 
   const refresh = useCallback(async (query, currentFilter, currentSort) => {
     if (!query) return;
@@ -138,6 +139,8 @@ function MainApp({ username, onLogout }) {
       catch { alert('Server error (status ' + res.status + '):\n' + text.slice(0, 300)); return; }
       if (data.error) { alert('Error: ' + data.error); return; }
       setReceptionistLead({ ...lead, receptionist: data.receptionist });
+      setReceptionistRefresh((k) => k + 1);
+      alert(`✅ AI Receptionist set up for ${lead.name}!\n\nScroll down to the AI Receptionist panel for the call forwarding number and instructions.`);
     } catch (err) {
       alert('Error: ' + err.message);
     } finally {
@@ -198,7 +201,7 @@ function MainApp({ username, onLogout }) {
 
       <AppointmentsPanel />
       <ChatbotActivityPanel />
-      <ReceptionistPanel />
+      <ReceptionistPanel refreshKey={receptionistRefresh} />
       <RebuildSection onPreview={(demo) => setActiveDemo(demo)} />
       <SocialToSiteSection onPreview={(demo) => setActiveDemo(demo)} />
       <DemoPreviewModal demo={activeDemo} onClose={() => setActiveDemo(null)} />

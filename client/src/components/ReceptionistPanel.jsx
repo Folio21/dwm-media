@@ -24,14 +24,14 @@ function fmtDuration(s) {
   return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
 }
 
-export default function ReceptionistPanel() {
+export default function ReceptionistPanel({ refreshKey = 0 }) {
   const [receptionists, setReceptionists] = useState([]);
   const [callLogs, setCallLogs]           = useState([]);
   const [loading, setLoading]             = useState(true);
   const [activeTab, setActiveTab]         = useState('calls'); // 'calls' | 'active'
   const [expandedLog, setExpandedLog]     = useState(null);
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => { fetchAll(); }, [refreshKey]);
 
   async function fetchAll() {
     setLoading(true);
