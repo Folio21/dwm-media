@@ -94,8 +94,8 @@ export async function createAssistant(lead, webhookUrl) {
       ],
     },
     voice: {
-      provider: '11labs',
-      voiceId: 'rachel',
+      provider: 'openai',
+      voiceId: 'nova',   // natural-sounding female voice, no extra credentials needed
     },
     firstMessage: `Hey, thanks for calling ${lead.name || 'us'} — you've reached our answering service. The team is currently unavailable but I can help you schedule something or take a message. What can I do for you?`,
     endCallMessage: 'Thanks for calling. Have a great day!',
