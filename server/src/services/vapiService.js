@@ -113,8 +113,6 @@ export async function provisionPhoneNumber(assistantId) {
   const number = await vapiRequest('POST', '/phone-number', {
     provider: 'vapi',
     assistantId,
-    // area code in Florida to keep it local-feeling
-    numberDesiredAreaCode: '407',
   });
   return number;
 }
