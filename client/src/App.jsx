@@ -8,6 +8,7 @@ import ChatbotModal from './components/ChatbotModal.jsx';
 import AppointmentsPanel from './components/AppointmentsPanel.jsx';
 import ColdEmailModal from './components/ColdEmailModal.jsx';
 import ChatbotActivityPanel from './components/ChatbotActivityPanel.jsx';
+import ReceptionistPanel from './components/ReceptionistPanel.jsx';
 import LoginPage from './components/LoginPage.jsx';
 import { searchLeads, getLeads, updateLeadStatus, buildDemoSite, buildChatbotPitch, buildColdEmail } from './api.js';
 
@@ -33,6 +34,8 @@ function MainApp({ username, onLogout }) {
   const [coldEmail, setColdEmail] = useState(null);
   const [coldEmailLoading, setColdEmailLoading] = useState(false);
   const [coldEmailError, setColdEmailError] = useState(null);
+  const [receptionistLead, setReceptionistLead] = useState(null);
+  const [receptionistLoading, setReceptionistLoading] = useState(false);
 
   const refresh = useCallback(async (query, currentFilter, currentSort) => {
     if (!query) return;
@@ -121,6 +124,24 @@ function MainApp({ username, onLogout }) {
     }
   } // eslint-disable-line react-hooks/exhaustive-deps
 
+  async function handleActivateReceptionist(lead) {
+    setReceptionistLoading(true);
+    try {
+      const token = localStorage.getItem('dwm_token');
+      const res = await fetch(`/api/leads/${lead.id}/setup-receptionist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.error) { alert('Error: ' + data.error); return; }
+      setReceptionistLead({ ...lead, receptionist: data.receptionist });
+    } catch (err) {
+      alert('Error: ' + err.message);
+    } finally {
+      setReceptionistLoading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <header className="mb-6 flex items-start justify-between">
@@ -169,10 +190,12 @@ function MainApp({ username, onLogout }) {
         buildingChatbotPitchId={buildingChatbotPitchId}
         onDemoChat={(lead) => setChatLead(lead)}
         onColdEmail={handleColdEmail}
+        onActivateReceptionist={handleActivateReceptionist}
       />
 
       <AppointmentsPanel />
       <ChatbotActivityPanel />
+      <ReceptionistPanel />
       <RebuildSection onPreview={(demo) => setActiveDemo(demo)} />
       <SocialToSiteSection onPreview={(demo) => setActiveDemo(demo)} />
       <DemoPreviewModal demo={activeDemo} onClose={() => setActiveDemo(null)} />
