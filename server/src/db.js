@@ -17,7 +17,9 @@ const dataFile = path.join(dataDir, 'leadfinder.json');
 function emptyStore() {
   return {
     leads: [], clients: [], sites: [], appointments: [], meetings: [], chat_contacts: [],
+    receptionists: [], call_logs: [],
     nextLeadId: 1, nextClientId: 1, nextSiteId: 1, nextAppointmentId: 1, nextMeetingId: 1, nextChatContactId: 1,
+    nextReceptionistId: 1, nextCallLogId: 1,
   };
 }
 
@@ -252,4 +254,68 @@ export function getAllChatContacts() {
   return [...(data.chat_contacts || [])].sort(
     (a, b) => new Date(b.created_at) - new Date(a.created_at)
   );
+}
+
+// --- AI Receptionists --------------------------------------------------------
+
+export function upsertReceptionist(rec) {
+  const data = load();
+  if (!data.receptionists) data.receptionists = [];
+  if (!data.nextReceptionistId) data.nextReceptionistId = 1;
+  const now = new Date().toISOString();
+  const existing = data.receptionists.find((r) => r.lead_id === rec.lead_id);
+  if (existing) {
+    Object.assign(existing, rec, { updated_at: now });
+    save(data);
+    return existing;
+  }
+  const record = { id: data.nextReceptionistId++, created_at: now, updated_at: now, ...rec };
+  data.receptionists.push(record);
+  save(data);
+  return record;
+}
+
+export function getReceptionistByLeadId(leadId) {
+  const data = load();
+  return (data.receptionists || []).find((r) => r.lead_id === Number(leadId)) || null;
+}
+
+export function getAllReceptionists() {
+  const data = load();
+  return [...(data.receptionists || [])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+}
+
+export function deleteReceptionist(leadId) {
+  const data = load();
+  data.receptionists = (data.receptionists || []).filter((r) => r.lead_id !== Number(leadId));
+  save(data);
+}
+
+// --- Call Logs ---------------------------------------------------------------
+
+export function addCallLog(log) {
+  const data = load();
+  if (!data.call_logs) data.call_logs = [];
+  if (!data.nextCallLogId) data.nextCallLogId = 1;
+  const now = new Date().toISOString();
+  // dedup by vapi_call_id
+  if (log.vapi_call_id && data.call_logs.find((c) => c.vapi_call_id === log.vapi_call_id)) {
+    return data.call_logs.find((c) => c.vapi_call_id === log.vapi_call_id);
+  }
+  const record = { id: data.nextCallLogId++, created_at: now, ...log };
+  data.call_logs.push(record);
+  save(data);
+  return record;
+}
+
+export function getCallLogsByLeadId(leadId) {
+  const data = load();
+  return [...(data.call_logs || [])]
+    .filter((c) => c.lead_id === Number(leadId))
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+}
+
+export function getAllCallLogs() {
+  const data = load();
+  return [...(data.call_logs || [])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 }

@@ -12,6 +12,7 @@ import appointmentsRouter from './routes/appointments.js';
 import chatbotPitchRouter from './routes/chatbotPitch.js';
 import coldEmailRouter from './routes/coldEmail.js';
 import meetingsRouter from './routes/meetings.js';
+import receptionistRouter from './routes/receptionist.js';
 import authRouter from './routes/auth.js';
 import { requireAuth } from './middleware/auth.js';
 import { getSiteById } from './db.js';
@@ -29,6 +30,7 @@ app.use('/api', authRouter);          // login — no auth required
 // Public routes — called from demo sites shown to potential clients (no login token available)
 app.use('/api', chatRouter);
 app.use('/api', appointmentsRouter);
+app.use('/api', receptionistRouter); // /api/vapi/* webhooks must be public (called by Vapi servers)
 
 app.use('/api', requireAuth);         // everything below requires a valid token
 app.use('/api', leadsRouter);
@@ -38,6 +40,7 @@ app.use('/api', socialRouter);
 app.use('/api', chatbotPitchRouter);
 app.use('/api', coldEmailRouter);
 app.use('/api', meetingsRouter);
+app.use('/api', receptionistRouter); // authenticated receptionist management routes
 
 // Shareable demo-site link (Section 4: "Get shareable link" for Demo mode).
 // Plain HTML, not JSON — meant to be opened directly in a browser or texted.
