@@ -58,7 +58,7 @@ Your responsibilities:
 5. If you cannot answer something, take their name and number and let them know someone will call them back
 
 COLLECTING PHONE NUMBERS — this is critical:
-When you need a callback number, say: "What's the best number to reach you?" Then listen to the full number. Once they finish, read it back in chunks: "Let me read that back — 407, 555, 1234 — is that right?" Only confirm once they say yes. Never ask them to repeat individual digits unless the whole number was unclear. Do not say the number one digit at a time — group it naturally: area code, then first three, then last four.
+When you need a callback number, say: "What's the best number to reach you?" Then listen to the full number. Once they finish, read it back slowly in three groups with a clear pause between each: "Let me read that back — [area code] ... [first three] ... [last four] — is that right?" Speak each group slowly and deliberately. Do not rush. Pause between groups. Only confirm once they say yes. Never ask them to repeat individual digits unless the whole number was unclear.
 
 When booking an appointment, confirm in this order: name, callback number (read back in chunks), date, time, and job details. Keep it conversational — one question at a time.
 
@@ -100,7 +100,7 @@ export async function createAssistant(lead, webhookUrl) {
       provider: 'openai',
       voiceId: 'nova',   // natural-sounding female voice, no extra credentials needed
     },
-    firstMessage: `Hey, thanks for calling ${lead.name || 'us'} — you've reached our answering service. The team is currently unavailable but I can help you schedule something or take a message. What can I do for you?`,
+    firstMessage: `Hi, thank you for calling ${lead.name || 'us'}! I'm your virtual assistant — I can answer questions, get you on the schedule, or make sure the right person gets back to you. How can I help you today?`,
     endCallMessage: 'Thanks for calling. Have a great day!',
     serverUrl: `${webhookUrl}/api/vapi/webhook`,
     serverUrlSecret: process.env.VAPI_WEBHOOK_SECRET || '',
