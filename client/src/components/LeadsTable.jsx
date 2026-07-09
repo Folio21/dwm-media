@@ -18,7 +18,7 @@ function PitchBadge({ hasWebsite }) {
   );
 }
 
-export default function LeadsTable({ leads, onUpdateLead, onBuildDemo, buildingDemoId, onBuildChatbotPitch, buildingChatbotPitchId, onDemoChat, onColdEmail }) {
+export default function LeadsTable({ leads, onUpdateLead, onBuildDemo, buildingDemoId, onBuildChatbotPitch, buildingChatbotPitchId, onDemoChat, onColdEmail, onActivateReceptionist }) {
   const [editingNotes, setEditingNotes] = useState({});
   const [editingOwner, setEditingOwner] = useState({});
 
@@ -68,6 +68,7 @@ export default function LeadsTable({ leads, onUpdateLead, onBuildDemo, buildingD
             <th className="px-3 py-2">Demo site</th>
             <th className="px-3 py-2">Chatbot pitch</th>
             <th className="px-3 py-2">Live chat</th>
+            <th className="px-3 py-2">Outreach</th>
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -188,12 +189,20 @@ export default function LeadsTable({ leads, onUpdateLead, onBuildDemo, buildingD
                   </button>
                 </td>
                 <td className="px-3 py-2">
-                  <button
-                    onClick={() => onColdEmail(lead)}
-                    className="text-xs px-2.5 py-1.5 rounded bg-teal-600 text-white hover:bg-teal-700 whitespace-nowrap"
-                  >
-                    ✉️ Cold Email
-                  </button>
+                  <div className="flex gap-1.5 flex-wrap">
+                    <button
+                      onClick={() => onColdEmail(lead)}
+                      className="text-xs px-2.5 py-1.5 rounded bg-teal-600 text-white hover:bg-teal-700 whitespace-nowrap"
+                    >
+                      ✉️ Cold Email
+                    </button>
+                    <button
+                      onClick={() => onActivateReceptionist && onActivateReceptionist(lead)}
+                      className="text-xs px-2.5 py-1.5 rounded bg-purple-600 text-white hover:bg-purple-700 whitespace-nowrap"
+                    >
+                      📞 Receptionist
+                    </button>
+                  </div>
                 </td>
               </tr>
             );
