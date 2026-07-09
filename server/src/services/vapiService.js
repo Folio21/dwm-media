@@ -40,7 +40,19 @@ function buildSystemPrompt(lead) {
   const owner    = lead.owner_name || null;
   const services = lead.services || null; // optional array
 
-  return `You are the AI receptionist for ${name}, a ${cat} in ${city}. You answer calls when the owner is unavailable — out on a job, with a customer, or after hours. Your job is to make sure no caller gets ignored and every lead gets captured.
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    timeZone: 'America/New_York',
+  });
+  const timeStr = now.toLocaleTimeString('en-US', {
+    hour: 'numeric', minute: '2-digit', hour12: true,
+    timeZone: 'America/New_York',
+  });
+
+  return `You are the AI receptionist for ${name}, a ${cat} in ${city}.
+
+TODAY'S DATE AND TIME: ${dateStr}, ${timeStr} Eastern Time. You know this — never ask the caller what day or date it is. When scheduling, refer to specific days by name (e.g. "this Thursday the 10th" or "next Monday"). If someone says "tomorrow" you know exactly what date that is. You answer calls when the owner is unavailable — out on a job, with a customer, or after hours. Your job is to make sure no caller gets ignored and every lead gets captured.
 
 Speak naturally and conversationally — this is a voice call, so keep your sentences short and clear. Never use bullet points, asterisks, or lists when speaking.
 
