@@ -71,35 +71,34 @@ export async function createAssistant(lead, webhookUrl) {
       model: 'claude-haiku-4-5-20251001',
       messages: [{ role: 'system', content: buildSystemPrompt(lead) }],
       temperature: 0.6,
+      tools: [
+        {
+          type: 'function',
+          function: {
+            name: 'book_appointment',
+            description: 'Book an appointment for the caller. Call this when a caller wants to schedule a job or service.',
+            parameters: {
+              type: 'object',
+              properties: {
+                caller_name:  { type: 'string', description: 'Full name of the caller' },
+                caller_phone: { type: 'string', description: 'Callback phone number' },
+                date:         { type: 'string', description: 'Preferred date (e.g. "Monday July 14th")' },
+                time:         { type: 'string', description: 'Preferred time (e.g. "10am")' },
+                notes:        { type: 'string', description: 'What the job is about' },
+              },
+              required: ['caller_name', 'caller_phone', 'date', 'notes'],
+            },
+          },
+          server: { url: `${webhookUrl}/api/vapi/tool/${lead.id}/book-appointment` },
+        },
+      ],
     },
     voice: {
       provider: '11labs',
-      voiceId: 'rachel', // natural female voice — good for receptionist
+      voiceId: 'rachel',
     },
     firstMessage: `Hey, thanks for calling ${lead.name || 'us'} — you've reached our answering service. The team is currently unavailable but I can help you schedule something or take a message. What can I do for you?`,
     endCallMessage: 'Thanks for calling. Have a great day!',
-    // Tool: book an appointment via our API
-    tools: [
-      {
-        type: 'function',
-        function: {
-          name: 'book_appointment',
-          description: 'Book an appointment for the caller. Call this when a caller wants to schedule a job or service.',
-          parameters: {
-            type: 'object',
-            properties: {
-              caller_name:  { type: 'string', description: 'Full name of the caller' },
-              caller_phone: { type: 'string', description: 'Callback phone number' },
-              date:         { type: 'string', description: 'Preferred date (e.g. "Monday July 14th")' },
-              time:         { type: 'string', description: 'Preferred time (e.g. "10am")' },
-              notes:        { type: 'string', description: 'What the job is about' },
-            },
-            required: ['caller_name', 'caller_phone', 'date', 'notes'],
-          },
-        },
-        server: { url: `${webhookUrl}/api/vapi/tool/${lead.id}/book-appointment` },
-      },
-    ],
     serverUrl: `${webhookUrl}/api/vapi/webhook`,
     serverUrlSecret: process.env.VAPI_WEBHOOK_SECRET || '',
     recordingEnabled: true,
