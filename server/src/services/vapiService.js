@@ -110,11 +110,21 @@ export async function createAssistant(lead, webhookUrl) {
 
 // ── Provision a phone number and link it to an assistant ────────────────────
 export async function provisionPhoneNumber(assistantId) {
-  const number = await vapiRequest('POST', '/phone-number', {
-    provider: 'vapi',
-    assistantId,
-  });
-  return number;
+  // Try several area codes — availability changes; Vapi will reject unavailable ones
+  const candidates = ['435', '316', '603', '512', '754', '561', '321', '813', '904'];
+  for (const areaCode of candidates) {
+    try {
+      return await vapiRequest('POST', '/phone-number', {
+        provider: 'vapi',
+        assistantId,
+        numberDesiredAreaCode: areaCode,
+      });
+    } catch (err) {
+      if (err.message.includes('not available') || err.message.includes('area code')) continue;
+      throw err; // unexpected error — stop immediately
+    }
+  }
+  throw new Error('No phone numbers available right now — try again in a few minutes');
 }
 
 // ── Delete assistant and release phone number ────────────────────────────────
