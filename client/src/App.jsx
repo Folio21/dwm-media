@@ -9,6 +9,7 @@ import AppointmentsPanel from './components/AppointmentsPanel.jsx';
 import ColdEmailModal from './components/ColdEmailModal.jsx';
 import ChatbotActivityPanel from './components/ChatbotActivityPanel.jsx';
 import ReceptionistPanel from './components/ReceptionistPanel.jsx';
+import ControlCenter from './components/ControlCenter.jsx';
 import LoginPage from './components/LoginPage.jsx';
 import { searchLeads, getLeads, updateLeadStatus, buildDemoSite, buildChatbotPitch, buildColdEmail } from './api.js';
 
@@ -25,6 +26,8 @@ function MainApp({ username, onLogout }) {
   const sortRef = useRef(sort);
   useEffect(() => { filterRef.current = filter; }, [filter]);
   useEffect(() => { sortRef.current = sort; }, [sort]);
+
+  const [activeView, setActiveView] = useState('leads'); // 'leads' | 'control-center'
 
   const [buildingDemoId, setBuildingDemoId] = useState(null);
   const [buildingChatbotPitchId, setBuildingChatbotPitchId] = useState(null);
@@ -149,17 +152,41 @@ function MainApp({ username, onLogout }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <header className="mb-6 flex items-start justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">Lead Finder</h1>
-          <p className="text-sm text-gray-500">Search local businesses, flag who needs a website, track calls.</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Top nav bar */}
+      <header className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
+        <div className="flex items-center gap-6">
+          <span className="text-sm font-bold text-gray-900">DWM <span className="text-purple-600">Media</span></span>
+          <nav className="flex gap-1">
+            {[
+              { id: 'leads',           label: '🔍 Lead Finder'    },
+              { id: 'control-center',  label: '📊 Control Center' },
+            ].map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => setActiveView(id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  activeView === id
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
         </div>
         <div className="flex items-center gap-3 text-sm">
-          <span className="text-gray-500">Signed in as <strong>{username}</strong></span>
+          <span className="text-gray-400 text-xs">Signed in as <strong className="text-gray-600">{username}</strong></span>
           <button onClick={onLogout} className="text-gray-400 hover:text-gray-700 underline text-xs">Sign out</button>
         </div>
       </header>
+
+      {/* Control Center view */}
+      {activeView === 'control-center' && <ControlCenter />}
+
+      {/* Lead Finder view */}
+      {activeView === 'leads' && <div className="p-6">
 
       <SearchForm onSearch={handleSearch} loading={loading} />
 
@@ -218,6 +245,7 @@ function MainApp({ username, onLogout }) {
           onClose={() => { setColdEmailLead(null); setColdEmail(null); }}
         />
       )}
+      </div>} {/* end Lead Finder view */}
     </div>
   );
 }

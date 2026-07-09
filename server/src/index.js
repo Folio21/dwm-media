@@ -13,6 +13,7 @@ import chatbotPitchRouter from './routes/chatbotPitch.js';
 import coldEmailRouter from './routes/coldEmail.js';
 import meetingsRouter from './routes/meetings.js';
 import receptionistRouter from './routes/receptionist.js';
+import statsRouter from './routes/stats.js';
 import authRouter from './routes/auth.js';
 import { requireAuth } from './middleware/auth.js';
 import { getSiteById } from './db.js';
@@ -41,6 +42,7 @@ app.use('/api', chatbotPitchRouter);
 app.use('/api', coldEmailRouter);
 app.use('/api', meetingsRouter);
 app.use('/api', receptionistRouter); // authenticated receptionist management routes
+app.use('/api', statsRouter);
 
 // Shareable demo-site link (Section 4: "Get shareable link" for Demo mode).
 // Plain HTML, not JSON — meant to be opened directly in a browser or texted.

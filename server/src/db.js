@@ -319,3 +319,42 @@ export function getAllCallLogs() {
   const data = load();
   return [...(data.call_logs || [])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 }
+
+// --- Stats (aggregate counts for Control Center) ----------------------------
+
+export function getStats() {
+  const data = load();
+  return {
+    total_leads:          data.leads.length,
+    demo_sites:           (data.sites || []).filter((s) => s.mode === 'demo').length,
+    active_receptionists: (data.receptionists || []).length,
+    total_calls:          (data.call_logs || []).length,
+    appointments:         (data.appointments || []).length,
+    meetings:             (data.meetings || []).length,
+    chat_contacts:        (data.chat_contacts || []).length,
+    leads_called:         data.leads.filter((l) => l.call_status !== 'Not called').length,
+    leads_booked:         data.leads.filter((l) => l.call_status === 'Booked').length,
+  };
+}
+
+// --- Business Metrics (manually entered revenue/spend + client list) ---------
+
+const DEFAULT_METRICS = {
+  total_revenue: 0,
+  monthly_revenue: 0,
+  total_spend: 0,
+  monthly_spend: 0,
+  clients: [],
+};
+
+export function getBusinessMetrics() {
+  const data = load();
+  return data.business_metrics || { ...DEFAULT_METRICS };
+}
+
+export function updateBusinessMetrics(patch) {
+  const data = load();
+  data.business_metrics = { ...DEFAULT_METRICS, ...(data.business_metrics || {}), ...patch };
+  save(data);
+  return data.business_metrics;
+}
