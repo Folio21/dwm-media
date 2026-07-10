@@ -7,7 +7,7 @@ function buildTextMessage(lead) {
   const what = lead.has_website
     ? 'an AI that books jobs and captures leads 24/7 right on your site'
     : 'a professional site + AI chatbot that books jobs and captures leads 24/7';
-  return `Hey, this is David from DWM Media — tried calling ${biz} but missed you. I help ${cat} owners get more booked jobs with ${what}. Worth a 5-min call? — David`;
+  return `Hey, this is David from LeadSavor.ai — tried calling ${biz} but missed you. I help ${cat} owners get more booked jobs with ${what}. Worth a 5-min call? — David`;
 }
 
 function guessFromWebsite(website) {

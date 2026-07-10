@@ -32,8 +32,8 @@ export default function LoginPage({ onLogin }) {
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">DWM Media</h1>
-          <p className="text-sm text-gray-500 mt-1">Lead Finder &amp; Demo Builder</p>
+          <h1 className="text-2xl font-bold text-gray-900">LeadSavor<span className="text-purple-600">.ai</span></h1>
+          <p className="text-sm text-gray-500 mt-1">AI Lead Generation &amp; Demo Platform</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
