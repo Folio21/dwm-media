@@ -31,7 +31,7 @@ router.post('/leads/:id/cold-email', async (req, res) => {
     ? 'an AI chatbot that books appointments and captures leads 24/7 directly on their existing website'
     : 'a professional website plus an AI chatbot that books appointments and captures leads 24/7';
 
-  const prompt = `Write a short, genuine cold follow-up email from David at LeadSavor.ai to ${owner} of ${lead.name}, a ${lead.category || 'local business'} in ${lead.city || 'the area'}.
+  const prompt = `Write a short, genuine cold follow-up email from David at LeadSavior.ai to ${owner} of ${lead.name}, a ${lead.category || 'local business'} in ${lead.city || 'the area'}.
 
 Context: David called but got no answer. This email is the follow-up. He is pitching ${pitch}.
 
@@ -40,7 +40,7 @@ Requirements:
 - Casual and direct — not salesy or corporate
 - Reference their specific business type naturally (${lead.category || 'local business'})
 - One clear call to action: reply or schedule a quick call
-- Sign off as David, LeadSavor.ai
+- Sign off as David, LeadSavior.ai
 - Return ONLY a JSON object with two fields: "subject" (the email subject line) and "body" (the full email body, plain text with newlines)
 - No markdown, no code fences, just raw JSON`;
 
@@ -110,7 +110,7 @@ router.post('/leads/:id/send-cold-email', async (req, res) => {
 
   try {
     await transporter.sendMail({
-      from: `"David @ LeadSavor.ai" <${process.env.GMAIL_USER}>`,
+      from: `"David @ LeadSavior.ai" <${process.env.GMAIL_USER}>`,
       to,
       subject,
       text: body,

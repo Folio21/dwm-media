@@ -156,7 +156,7 @@ function MainApp({ username, onLogout }) {
       {/* Top nav bar */}
       <header className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-6">
-          <span className="text-sm font-bold text-gray-900">LeadSavor<span className="text-purple-600">.ai</span></span>
+          <span className="text-sm font-bold text-gray-900">LeadSavior<span className="text-purple-600">.ai</span></span>
           <nav className="flex gap-1">
             {[
               { id: 'leads',           label: '🔍 Lead Finder'    },

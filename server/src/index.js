@@ -63,5 +63,5 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`DWM Media server running on http://localhost:${PORT}`);
+  console.log(`LeadSavior.ai server running on http://localhost:${PORT}`);
 });

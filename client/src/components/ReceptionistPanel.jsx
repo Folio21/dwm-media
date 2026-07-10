@@ -174,10 +174,15 @@ export default function ReceptionistPanel({ refreshKey = 0 }) {
                 <div className="bg-white rounded-lg border border-blue-100 px-3 py-2 flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Forward to this number</p>
-                    <p className="text-sm font-mono font-bold text-gray-900">{rec.phone_number || 'Provisioning…'}</p>
+                    <p className="text-sm font-mono font-bold text-gray-900">
+                      {rec.phone_number ? rec.phone_number.replace(/^\+1/, '') : 'Provisioning…'}
+                    </p>
+                    {rec.phone_number && (
+                      <a href={`tel:${rec.phone_number}`} className="text-xs text-blue-500 hover:underline">Tap to call</a>
+                    )}
                   </div>
                   <button
-                    onClick={() => navigator.clipboard.writeText(rec.phone_number || '')}
+                    onClick={() => navigator.clipboard.writeText(rec.phone_number ? rec.phone_number.replace(/^\+1/, '') : '')}
                     className="text-xs text-blue-600 hover:text-blue-800 border border-blue-200 px-2 py-1 rounded">
                     Copy
                   </button>
@@ -190,16 +195,4 @@ export default function ReceptionistPanel({ refreshKey = 0 }) {
                     <p><strong>Android:</strong> Phone app → ⋮ Menu → Settings → Call Forwarding → Forward when unanswered → enter the number above.</p>
                     <p><strong>Any carrier:</strong> Dial <code className="bg-blue-100 px-1 rounded">*61*{rec.phone_number}#</code> from their business phone. This is the universal "forward on no answer" code and works on AT&T, Verizon, T-Mobile, and most others.</p>
                   </div>
-                </div>
-
-                <p className="text-[10px] text-blue-500 pt-1">
-                  To turn off forwarding later: dial <code className="bg-blue-100 px-1 rounded">#61#</code> from their phone.
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+                </di
