@@ -18,8 +18,9 @@ function emptyStore() {
   return {
     leads: [], clients: [], sites: [], appointments: [], meetings: [], chat_contacts: [],
     receptionists: [], call_logs: [],
+    watch_zones: [], poached_leads: [], seen_review_ids: [],
     nextLeadId: 1, nextClientId: 1, nextSiteId: 1, nextAppointmentId: 1, nextMeetingId: 1, nextChatContactId: 1,
-    nextReceptionistId: 1, nextCallLogId: 1,
+    nextReceptionistId: 1, nextCallLogId: 1, nextWatchZoneId: 1, nextPoachedLeadId: 1,
   };
 }
 
@@ -74,13 +75,12 @@ const CHAIN_KEYWORDS = [
   'always comfortable', 'mister sparky', 'mister rogers',
   'petro home', 'atlas copco', 'carrier', 'lennox', 'trane',
   'comfort systems', 'service master', 'servicemaster',
-  'del-air', 'rainaldi', 'mills air',  // large regional FL chains
+  'del-air', 'rainaldi', 'mills air',
 ];
 
 function isChainOrLarge(lead) {
   const nameLower = (lead.name || '').toLowerCase();
   if (CHAIN_KEYWORDS.some((kw) => nameLower.includes(kw))) return true;
-  // Businesses with 200+ reviews are almost certainly not small-local
   if ((lead.review_count || 0) >= 200) return true;
   return false;
 }
@@ -96,9 +96,7 @@ export function queryLeads({ city, category, filter, sort } = {}) {
   if (filter === 'called') leads = leads.filter((l) => l.call_status !== 'Not called');
   if (filter === 'not_called') leads = leads.filter((l) => l.call_status === 'Not called');
   if (filter === 'local_only') leads = leads.filter((l) => !isChainOrLarge(l));
-  // "pitch_ready" = local small biz with no website — the core pitch target
   if (filter === 'pitch_ready') leads = leads.filter((l) => !l.has_website && !isChainOrLarge(l));
-  // "chatbot_pitch" = local small biz that already has a website
   if (filter === 'chatbot_pitch') leads = leads.filter((l) => l.has_website && !isChainOrLarge(l));
 
   leads = [...leads];
@@ -128,7 +126,7 @@ export function updateLead(id, patch) {
   return lead;
 }
 
-// --- Sites (Phase 2: demo sites; client_id stays null until Phase 4) -------
+// --- Sites -----------------------------------------------------------------
 
 export function addSite(site) {
   const data = load();
@@ -148,7 +146,7 @@ export function listSites() {
   return load().sites;
 }
 
-// --- Clients (Phase 3 — empty for now) ------------------------------------
+// --- Clients ---------------------------------------------------------------
 
 export function listClients() {
   return load().clients;
@@ -175,7 +173,6 @@ export function getAppointmentsByLeadId(leadId) {
 export function getAllAppointments() {
   const data = load();
   const appts = data.appointments || [];
-  // Sort: soonest first
   return [...appts].sort((a, b) => {
     const da = new Date(a.date_iso || a.created_at);
     const db2 = new Date(b.date_iso || b.created_at);
@@ -192,7 +189,7 @@ export function updateAppointment(id, patch) {
   return appt;
 }
 
-// --- Sales Meetings (David + partner's Zoom/calls with business owners) -----
+// --- Sales Meetings --------------------------------------------------------
 
 export function addMeeting(meeting) {
   const data = load();
@@ -208,9 +205,7 @@ export function addMeeting(meeting) {
 export function getAllMeetings() {
   const data = load();
   const meetings = data.meetings || [];
-  // Sort: upcoming first, then by date desc for past ones
   return [...meetings].sort((a, b) => {
-    // Put upcoming at top
     const order = { upcoming: 0, done: 1, 'no-show': 2, closed: 3 };
     const aO = order[a.status] ?? 4;
     const bO = order[b.status] ?? 4;
@@ -228,14 +223,13 @@ export function updateMeeting(id, patch) {
   return meeting;
 }
 
-// --- Chat Contacts (first contacts via chatbot widget, even without a booking) ---
+// --- Chat Contacts ---------------------------------------------------------
 
 export function addChatContact(contact) {
   const data = load();
   if (!data.chat_contacts) data.chat_contacts = [];
   if (!data.nextChatContactId) data.nextChatContactId = 1;
   const now = new Date().toISOString();
-  // Avoid duplicates: same name+phone+lead_id within 24 hours
   const recent = data.chat_contacts.find((c) =>
     c.lead_id === contact.lead_id &&
     c.customer_phone === contact.customer_phone &&
@@ -256,7 +250,7 @@ export function getAllChatContacts() {
   );
 }
 
-// --- AI Receptionists --------------------------------------------------------
+// --- AI Receptionists ------------------------------------------------------
 
 export function upsertReceptionist(rec) {
   const data = load();
@@ -291,14 +285,13 @@ export function deleteReceptionist(leadId) {
   save(data);
 }
 
-// --- Call Logs ---------------------------------------------------------------
+// --- Call Logs -------------------------------------------------------------
 
 export function addCallLog(log) {
   const data = load();
   if (!data.call_logs) data.call_logs = [];
   if (!data.nextCallLogId) data.nextCallLogId = 1;
   const now = new Date().toISOString();
-  // dedup by vapi_call_id
   if (log.vapi_call_id && data.call_logs.find((c) => c.vapi_call_id === log.vapi_call_id)) {
     return data.call_logs.find((c) => c.vapi_call_id === log.vapi_call_id);
   }
@@ -320,7 +313,7 @@ export function getAllCallLogs() {
   return [...(data.call_logs || [])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 }
 
-// --- Stats (aggregate counts for Control Center) ----------------------------
+// --- Stats -----------------------------------------------------------------
 
 export function getStats() {
   const data = load();
@@ -337,7 +330,7 @@ export function getStats() {
   };
 }
 
-// --- Business Metrics (manually entered revenue/spend + client list) ---------
+// --- Business Metrics ------------------------------------------------------
 
 const DEFAULT_METRICS = {
   total_revenue: 0,
@@ -357,4 +350,73 @@ export function updateBusinessMetrics(patch) {
   data.business_metrics = { ...DEFAULT_METRICS, ...(data.business_metrics || {}), ...patch };
   save(data);
   return data.business_metrics;
+}
+
+// --- Review Poacher: Watch Zones -------------------------------------------
+
+export function saveWatchZone(zone) {
+  const data = load();
+  if (!data.watch_zones) data.watch_zones = [];
+  if (!data.nextWatchZoneId) data.nextWatchZoneId = 1;
+  const now = new Date().toISOString();
+  const record = { id: data.nextWatchZoneId++, created_at: now, ...zone };
+  data.watch_zones = [record];
+  save(data);
+  return record;
+}
+
+export function getWatchZone() {
+  const data = load();
+  return (data.watch_zones || [])[0] || null;
+}
+
+export function deleteWatchZone() {
+  const data = load();
+  data.watch_zones = [];
+  save(data);
+}
+
+export function updateWatchZoneStats(stats) {
+  const data = load();
+  if (data.watch_zones && data.watch_zones[0]) {
+    Object.assign(data.watch_zones[0], stats);
+    save(data);
+  }
+}
+
+// --- Review Poacher: Poached Leads -----------------------------------------
+
+export function addPoachedLead(lead) {
+  const data = load();
+  if (!data.poached_leads) data.poached_leads = [];
+  if (!data.nextPoachedLeadId) data.nextPoachedLeadId = 1;
+  const now = new Date().toISOString();
+  const record = { id: data.nextPoachedLeadId++, created_at: now, ...lead };
+  data.poached_leads.unshift(record);
+  save(data);
+  return record;
+}
+
+export function getPoachedLeads(limit = 50) {
+  const data = load();
+  return (data.poached_leads || []).slice(0, limit);
+}
+
+// --- Review Poacher: Seen Review IDs (dedup) --------------------------------
+
+export function hasSeenReview(reviewId) {
+  const data = load();
+  return (data.seen_review_ids || []).includes(reviewId);
+}
+
+export function markReviewSeen(reviewId) {
+  const data = load();
+  if (!data.seen_review_ids) data.seen_review_ids = [];
+  if (!data.seen_review_ids.includes(reviewId)) {
+    data.seen_review_ids.push(reviewId);
+    if (data.seen_review_ids.length > 2000) {
+      data.seen_review_ids = data.seen_review_ids.slice(-2000);
+    }
+    save(data);
+  }
 }

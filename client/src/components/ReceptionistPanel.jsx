@@ -195,4 +195,16 @@ export default function ReceptionistPanel({ refreshKey = 0 }) {
                     <p><strong>Android:</strong> Phone app → ⋮ Menu → Settings → Call Forwarding → Forward when unanswered → enter the number above.</p>
                     <p><strong>Any carrier:</strong> Dial <code className="bg-blue-100 px-1 rounded">*61*{rec.phone_number}#</code> from their business phone. This is the universal "forward on no answer" code and works on AT&T, Verizon, T-Mobile, and most others.</p>
                   </div>
-                </di
+                </div>
+
+                <p className="text-[10px] text-blue-500 pt-1">
+                  To turn off forwarding later: dial <code className="bg-blue-100 px-1 rounded">#61#</code> from their phone.
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

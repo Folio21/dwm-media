@@ -10,6 +10,7 @@ import ColdEmailModal from './components/ColdEmailModal.jsx';
 import ChatbotActivityPanel from './components/ChatbotActivityPanel.jsx';
 import ReceptionistPanel from './components/ReceptionistPanel.jsx';
 import ControlCenter from './components/ControlCenter.jsx';
+import ReviewPoacher from './components/ReviewPoacher.jsx';
 import LoginPage from './components/LoginPage.jsx';
 import { searchLeads, getLeads, updateLeadStatus, buildDemoSite, buildChatbotPitch, buildColdEmail } from './api.js';
 
@@ -27,7 +28,7 @@ function MainApp({ username, onLogout }) {
   useEffect(() => { filterRef.current = filter; }, [filter]);
   useEffect(() => { sortRef.current = sort; }, [sort]);
 
-  const [activeView, setActiveView] = useState('leads'); // 'leads' | 'control-center'
+  const [activeView, setActiveView] = useState('leads'); // 'leads' | 'control-center' | 'review-poacher'
 
   const [buildingDemoId, setBuildingDemoId] = useState(null);
   const [buildingChatbotPitchId, setBuildingChatbotPitchId] = useState(null);
@@ -160,6 +161,7 @@ function MainApp({ username, onLogout }) {
           <nav className="flex gap-1">
             {[
               { id: 'leads',           label: '🔍 Lead Finder'    },
+              { id: 'review-poacher',  label: '🎯 Review Poacher' },
               { id: 'control-center',  label: '📊 Control Center' },
             ].map(({ id, label }) => (
               <button
@@ -184,6 +186,9 @@ function MainApp({ username, onLogout }) {
 
       {/* Control Center view */}
       {activeView === 'control-center' && <ControlCenter />}
+
+      {/* Review Poacher view */}
+      {activeView === 'review-poacher' && <div className="p-6"><ReviewPoacher /></div>}
 
       {/* Lead Finder view */}
       {activeView === 'leads' && <div className="p-6">

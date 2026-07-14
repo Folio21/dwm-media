@@ -14,9 +14,11 @@ import coldEmailRouter from './routes/coldEmail.js';
 import meetingsRouter from './routes/meetings.js';
 import receptionistRouter from './routes/receptionist.js';
 import statsRouter from './routes/stats.js';
+import reviewPoacherRouter from './routes/reviewPoacher.js';
 import authRouter from './routes/auth.js';
 import { requireAuth } from './middleware/auth.js';
 import { getSiteById } from './db.js';
+import { startReviewMonitor } from './services/reviewMonitor.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -43,6 +45,7 @@ app.use('/api', coldEmailRouter);
 app.use('/api', meetingsRouter);
 app.use('/api', receptionistRouter); // authenticated receptionist management routes
 app.use('/api', statsRouter);
+app.use('/api', reviewPoacherRouter);
 
 // Shareable demo-site link (Section 4: "Get shareable link" for Demo mode).
 // Plain HTML, not JSON — meant to be opened directly in a browser or texted.
@@ -64,4 +67,6 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`LeadSavior.ai server running on http://localhost:${PORT}`);
+  // Start the automated review monitor (polls every 4 hours)
+  startReviewMonitor();
 });
